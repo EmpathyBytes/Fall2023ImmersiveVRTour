@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
@@ -222,7 +222,7 @@ public class OVRGLTFAnimatinonNode
 
         m_gameObj.transform.localRotation = a;
         if (m_translations.Count > 1 || m_scales.Count > 1)
-            Debug.LogWarning("Unsupported pose.");
+            Debug.LogError("Unsupported pose.");
     }
 
     // We will blend the 2 closest animations, this picks which 2.

@@ -7,7 +7,7 @@
  */
 
 using System;
-using System.Collections.Generic;
+using System.Reflection;
 using UnityEditor;
 using Meta.WitAi.Data.Configuration;
 
@@ -16,22 +16,29 @@ namespace Meta.WitAi.Windows
     public static class WitWindowUtility
     {
         // Window types
-        public static Type SetupWindowType => FindChildClass<WitWelcomeWizard>();
-        public static Type ConfigurationWindowType => FindChildClass<WitWindow>();
-        public static Type UnderstandingWindowType => FindChildClass<WitUnderstandingViewer>();
-
+        public static Type SetupWindowType => FindChildClass(typeof(WitWelcomeWizard));
+        public static Type ConfigurationWindowType => FindChildClass(typeof(WitWindow));
+        public static Type UnderstandingWindowType => FindChildClass(typeof(WitUnderstandingViewer));
         // Finds a child class if possible
-        private static Type FindChildClass<T>()
+        private static Type FindChildClass(Type baseType)
         {
-            // Find all subclasses & return the first
-            List<Type> results = typeof(T).GetSubclassTypes(true);
-            if (results != null && results.Count > 0)
+            Type result = baseType;
+            Assembly currentAssembly = baseType.Assembly;
+            Array.Find(AppDomain.CurrentDomain.GetAssemblies(), (assembly) =>
             {
-                return results[0];
-            }
-
-            // Return type passed in
-            return typeof(T);
+                if (assembly != currentAssembly)
+                {
+                    Type[] types = assembly.GetTypes();
+                    int index = Array.FindIndex(types, (assemblyType) => { return assemblyType.BaseType == baseType; });
+                    if (index != -1)
+                    {
+                        result = types[index];
+                        return true;
+                    }
+                }
+                return false;
+            });
+            return result;
         }
 
         // Opens Setup Window

@@ -8,12 +8,14 @@
 
 using System;
 using System.Collections.Generic;
+using Meta.WitAi.Data.Configuration;
 using Meta.WitAi.TTS.Data;
+using Meta.WitAi.TTS.Editor.Preload;
 using Meta.WitAi.Utilities;
 using UnityEditor;
 using UnityEngine;
 
-namespace Meta.WitAi.TTS.Preload
+namespace Meta.WitAi.TTS.Editor
 {
     [CustomEditor(typeof(TTSPreloadSettings), true)]
     public class TTSPreloadSettingsInspector : UnityEditor.Editor
@@ -468,10 +470,10 @@ namespace Meta.WitAi.TTS.Preload
             {
                 foreach (var voiceSetting in service.GetAllPresetVoiceSettings())
                 {
-                    if (voiceSetting != null && !string.IsNullOrEmpty(voiceSetting.SettingsId) &&
-                        !results.Contains(voiceSetting.SettingsId))
+                    if (voiceSetting != null && !string.IsNullOrEmpty(voiceSetting.settingsID) &&
+                        !results.Contains(voiceSetting.settingsID))
                     {
-                        results.Add(voiceSetting.SettingsId);
+                        results.Add(voiceSetting.settingsID);
                     }
                 }
             }

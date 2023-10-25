@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
@@ -817,8 +817,7 @@ public class OVRSpatialAnchor : MonoBehaviour
 
     internal static bool TryGetPose(OVRSpace space, out OVRPose pose)
     {
-        var tryLocateSpace = OVRPlugin.TryLocateSpace(space, OVRPlugin.GetTrackingOriginType(), out var posef, out var locationFlags);
-        if (!tryLocateSpace || !locationFlags.IsOrientationValid() || !locationFlags.IsPositionValid())
+        if (!OVRPlugin.TryLocateSpace(space, OVRPlugin.GetTrackingOriginType(), out var posef))
         {
             pose = OVRPose.identity;
             return false;
@@ -1586,7 +1585,6 @@ public class OVRSpatialAnchor : MonoBehaviour
 
         /// <summary>Network operation failed.</summary>
         Failure_SpaceNetworkRequestFailed = -2004,
-
     }
 
     /// <summary>
@@ -1619,13 +1617,6 @@ public class OVRSpatialAnchor : MonoBehaviour
         }
     }
 
-}
-
-public static class OperationResultExtensions
-{
-    public static bool IsSuccess(this OVRSpatialAnchor.OperationResult res) => res == OVRSpatialAnchor.OperationResult.Success;
-    public static bool IsError(this OVRSpatialAnchor.OperationResult res) => res < 0;
-    public static bool IsWarning(this OVRSpatialAnchor.OperationResult res) => res > 0;
 }
 
 /// <summary>

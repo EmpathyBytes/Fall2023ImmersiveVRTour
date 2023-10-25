@@ -8,11 +8,10 @@
 
 using UnityEditor;
 using System.Reflection;
-using Meta.WitAi.Configuration;
+using Meta.WitAi;
 
 namespace Meta.WitAi.Windows
 {
-    [CustomPropertyDrawer(typeof(WitEndpointConfig))]
     public class WitEndpointConfigDrawer : WitPropertyDrawer
     {
         // All WitEndpointConfig parameters

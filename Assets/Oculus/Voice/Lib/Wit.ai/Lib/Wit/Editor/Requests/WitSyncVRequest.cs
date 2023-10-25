@@ -15,16 +15,8 @@ namespace Meta.WitAi.Requests
 {
     internal class WitSyncVRequest : WitVRequest, IWitSyncVRequest
     {
-        /// <summary>
-        /// Constructor for wit based editor data sync VRequests
-        /// </summary>
-        /// <param name="configuration">The configuration interface to be used</param>
-        /// <param name="onDownloadProgress">The callback for progress related to downloading</param>
-        /// <param name="onFirstResponse">The callback for the first response of data from a request</param>
-        public WitSyncVRequest(IWitRequestConfiguration configuration,
-            RequestProgressDelegate onDownloadProgress = null,
-            RequestFirstResponseDelegate onFirstResponse = null)
-            : base(configuration, null, true, onDownloadProgress, onFirstResponse) {}
+        // Constructor
+        public WitSyncVRequest(IWitRequestConfiguration configuration) : base(configuration, null, true) {}
 
         /// <summary>
         /// Submits an intent to be added to the current wit app
@@ -76,6 +68,7 @@ namespace Meta.WitAi.Requests
         /// <param name="synonym">The synonym we're adding</param>
         /// <param name="onComplete">On completion that returns updated entity if successful</param>
         /// <returns>False if fails to make request</returns>
+
         public bool RequestAddSynonym(string entityId, string keyword, string synonym, RequestCompleteDelegate<WitEntityInfo> onComplete)
         {
             string json = $"{{\"synonym\": \"{synonym}\"}}";

@@ -210,7 +210,6 @@ namespace Oculus.Interaction
         private Mesh _mesh;
         private int[] _tris;
         private int _initializedSteps = -1;
-        private int _vertsCount;
 
         private float _totalLength = 0f;
 
@@ -228,6 +227,14 @@ namespace Oculus.Interaction
         }
 
         #endregion
+
+        protected virtual void OnDestroy()
+        {
+            if (_initializedSteps != -1)
+            {
+                _vertsData.Dispose();
+            }
+        }
 
         protected virtual void OnEnable()
         {
@@ -252,7 +259,6 @@ namespace Oculus.Interaction
                 InitializeMeshData(steps);
                 _initializedSteps = steps;
             }
-            _vertsData = new NativeArray<VertexLayout>(_vertsCount, Allocator.Temp);
             UpdateMeshData(points, space);
             _renderer.enabled = enabled;
         }
@@ -267,6 +273,10 @@ namespace Oculus.Interaction
 
         private void InitializeMeshData(int steps)
         {
+            if (_vertsData.IsCreated)
+            {
+                _vertsData.Dispose();
+            }
             _dataLayout = new VertexAttributeDescriptor[]
             {
                 new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
@@ -274,11 +284,13 @@ namespace Oculus.Interaction
                 new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
             };
 
-            _vertsCount = SetVertexCount(steps, _divisions, _bevel);
+            int vertsCount = SetVertexCount(steps, _divisions, _bevel);
             SubMeshDescriptor submeshDesc = new SubMeshDescriptor(0, _tris.Length, MeshTopology.Triangles);
 
+            _vertsData = new NativeArray<VertexLayout>(vertsCount, Allocator.Persistent);
             _mesh = new Mesh();
-            _mesh.SetVertexBufferParams(_vertsCount, _dataLayout);
+            _mesh.SetVertexBufferParams(vertsCount, _dataLayout);
+
             _mesh.SetIndexBufferParams(_tris.Length, IndexFormat.UInt32);
             _mesh.SetIndexBufferData(_tris, 0, 0, _tris.Length);
             _mesh.subMeshCount = 1;

@@ -207,12 +207,6 @@ public class OVRSkeleton : MonoBehaviour
         return _skeletonType;
     }
 
-    internal virtual void SetSkeletonType(SkeletonType type)
-    {
-        _skeletonType = type;
-    }
-
-
     public bool IsValidBone(BoneId bone)
     {
         return OVRPlugin.IsValidBone((OVRPlugin.BoneId)bone, (OVRPlugin.SkeletonType)_skeletonType);
@@ -338,7 +332,6 @@ public class OVRSkeleton : MonoBehaviour
             Bones = _bones.AsReadOnly();
         }
 
-        bool newBonesCreated = false;
         // pre-populate bones list before attempting to apply bone hierarchy
         for (int i = 0; i < _bones.Count; ++i)
         {
@@ -347,16 +340,10 @@ public class OVRSkeleton : MonoBehaviour
             bone.ParentBoneIndex = _skeleton.Bones[i].ParentBoneIndex;
             Assert.IsTrue((int)bone.Id >= 0 && bone.Id <= BoneId.Max);
 
-            // don't create new bones each time; rely on
-            // pre-existing bone transforms.
+            bone.Transform = GetBoneTransform(bone.Id);
             if (bone.Transform == null)
             {
-                newBonesCreated = true;
-                bone.Transform = GetBoneTransform(bone.Id);
-                if (bone.Transform == null)
-                {
-                    bone.Transform = new GameObject(BoneLabelFromBoneId(_skeletonType, bone.Id)).transform;
-                }
+                bone.Transform = new GameObject(BoneLabelFromBoneId(_skeletonType, bone.Id)).transform;
             }
 
             var pose = _skeleton.Bones[i].Pose;
@@ -373,19 +360,16 @@ public class OVRSkeleton : MonoBehaviour
                 : pose.Orientation.FromFlippedZQuatf();
         }
 
-        if (newBonesCreated)
+        for (int i = 0; i < _bones.Count; ++i)
         {
-            for (int i = 0; i < _bones.Count; ++i)
+            if (!IsValidBone((BoneId)_bones[i].ParentBoneIndex) ||
+                IsBodySkeleton(_skeletonType)) // Body bones are always in tracking space
             {
-                if (!IsValidBone((BoneId)_bones[i].ParentBoneIndex) ||
-                    IsBodySkeleton(_skeletonType))  // Body bones are always in tracking space
-                {
-                    _bones[i].Transform.SetParent(_bonesGO.transform, false);
-                }
-                else
-                {
-                    _bones[i].Transform.SetParent(_bones[_bones[i].ParentBoneIndex].Transform, false);
-                }
+                _bones[i].Transform.SetParent(_bonesGO.transform, false);
+            }
+            else
+            {
+                _bones[i].Transform.SetParent(_bones[_bones[i].ParentBoneIndex].Transform, false);
             }
         }
     }

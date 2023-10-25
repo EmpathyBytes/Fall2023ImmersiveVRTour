@@ -48,11 +48,6 @@ public class OVRFace : MonoBehaviour
         set => _blendShapeStrengthMultiplier = value;
     }
 
-    internal SkinnedMeshRenderer RetrieveSkinnedMeshRenderer()
-    {
-        return GetComponent<SkinnedMeshRenderer>();
-    }
-
     [SerializeField]
     [Tooltip("The OVRFaceExpressions Component to fetch the Face Tracking weights from that are to be applied")]
     protected internal OVRFaceExpressions _faceExpressions;
@@ -97,10 +92,16 @@ public class OVRFace : MonoBehaviour
 
             for (int blendShapeIndex = 0; blendShapeIndex < numBlendshapes; ++blendShapeIndex)
             {
-                if (GetWeightValue(blendShapeIndex, out var currentWeight))
+                OVRFaceExpressions.FaceExpression blendShapeToFaceExpression = GetFaceExpression(blendShapeIndex);
+                if (blendShapeToFaceExpression >= OVRFaceExpressions.FaceExpression.Max ||
+                    blendShapeToFaceExpression < 0)
                 {
-                    _skinnedMeshRenderer.SetBlendShapeWeight(blendShapeIndex, Mathf.Clamp(currentWeight, 0f, 100f));
+                    continue;
                 }
+
+                float currentWeight = _faceExpressions[blendShapeToFaceExpression];
+                _skinnedMeshRenderer.SetBlendShapeWeight(blendShapeIndex,
+                    currentWeight * _blendShapeStrengthMultiplier);
             }
         }
     }
@@ -115,23 +116,4 @@ public class OVRFace : MonoBehaviour
     /// <returns>Returns the <see cref="OVRFaceExpressions.FaceExpression"/> to drive the bland shape identified by <paramref name="blendShapeIndex"/>.</returns>
     internal protected virtual OVRFaceExpressions.FaceExpression GetFaceExpression(int blendShapeIndex) =>
         OVRFaceExpressions.FaceExpression.Invalid;
-
-    /// <summary>
-    /// Calculates the value for the specific target blend shape of the shared mesh <c>SkinnedMeshRenderer</c>
-    /// </summary>
-    /// <param name="blendShapeIndex">Index of the blend shape of the shared mesh <c>SkinnedMeshRenderer</c></param>
-    /// <param name="weightValue">Calculated value</param>
-    /// <returns>true if value was calculated, false if no value available for that blend shape</returns>
-    internal protected virtual bool GetWeightValue(int blendShapeIndex, out float weightValue)
-    {
-        OVRFaceExpressions.FaceExpression blendShapeToFaceExpression = GetFaceExpression(blendShapeIndex);
-        if (blendShapeToFaceExpression >= OVRFaceExpressions.FaceExpression.Max || blendShapeToFaceExpression < 0)
-        {
-            weightValue = 0;
-            return false;
-        }
-
-        weightValue = _faceExpressions[blendShapeToFaceExpression] * _blendShapeStrengthMultiplier;
-        return true;
-    }
 }

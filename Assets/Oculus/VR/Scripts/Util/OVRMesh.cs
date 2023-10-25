@@ -49,12 +49,7 @@ public class OVRMesh : MonoBehaviour
 
     public Mesh Mesh
     {
-        get => _mesh;
-    }
-
-    internal void SetMeshType(MeshType type)
-    {
-        _meshType = type;
+        get { return _mesh; }
     }
 
     private void Awake()

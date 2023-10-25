@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
@@ -28,8 +28,6 @@ using UnityEngine;
 [RequireComponent(typeof(OVRSceneManager))]
 public class OVRSceneModelLoader : MonoBehaviour
 {
-    private const float RetryingReminderDelay = 10;
-
     /// <summary>
     /// The <see cref="OVRSceneManager"/> component that this loader will use.
     /// </summary>
@@ -55,23 +53,12 @@ public class OVRSceneModelLoader : MonoBehaviour
 
     private IEnumerator AttemptToLoadSceneModel()
     {
-        var timeSinceReminder = 0f;
-        OVRSceneManager.Development.LogWarning(nameof(OVRSceneModelLoader),
-            $"{nameof(OVRSceneManager.LoadSceneModel)} failed. Retrying.");
         do
         {
-            timeSinceReminder += Time.deltaTime;
-            if (timeSinceReminder >= RetryingReminderDelay)
-            {
-                timeSinceReminder = 0;
-                OVRSceneManager.Development.LogWarning(nameof(OVRSceneModelLoader),
-                    $"{nameof(OVRSceneManager.LoadSceneModel)} failed. Still retrying.");
-            }
+            OVRSceneManager.Development.LogWarning(nameof(OVRSceneModelLoader),
+                $"{nameof(OVRSceneManager.LoadSceneModel)} failed. Will try again next frame.");
             yield return null;
         } while (!SceneManager.LoadSceneModel());
-
-        OVRSceneManager.Development.Log(nameof(OVRSceneModelLoader),
-            $"{nameof(OVRSceneManager.LoadSceneModel)} succeeded.");
     }
 
     /// <summary>
@@ -80,26 +67,14 @@ public class OVRSceneModelLoader : MonoBehaviour
     /// </summary>
     protected virtual void OnStart()
     {
-        LoadSceneModel();
-    }
-
-    private void LoadSceneModel()
-    {
+        // Load the scene
         SceneManager.Verbose?.Log(nameof(OVRSceneModelLoader),
             $"{nameof(OnStart)}() calling {nameof(OVRSceneManager)}.{nameof(OVRSceneManager.LoadSceneModel)}()");
 
         if (!SceneManager.LoadSceneModel())
         {
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || (UNITY_ANDROID && !UNITY_EDITOR)
-            if (!OVRManager.isHmdPresent)
-            {
-                OVRSceneManager.Development.LogWarning(nameof(OVRSceneModelLoader),
-                    $"{nameof(OVRSceneManager.LoadSceneModel)} failed. No link or HMD detected.");
-            }
-            else
-            {
-                StartCoroutine(AttemptToLoadSceneModel());
-            }
+            StartCoroutine(AttemptToLoadSceneModel());
 #endif
         }
     }
@@ -125,7 +100,7 @@ public class OVRSceneModelLoader : MonoBehaviour
             "There is no scene model available, and scene capture cannot be invoked over Link. " +
             "Please capture a scene with the HMD in standalone mode, then access the scene model over Link. " +
             "\n\n" +
-            "If a scene model has already been captured, make sure the HMD is connected via Link and that it is donned.",
+            "If a scene model has already been captured, make sure the HMD is connected via Link and that is is donned.",
             "Ok");
 #else
         if (_sceneCaptureRequested)

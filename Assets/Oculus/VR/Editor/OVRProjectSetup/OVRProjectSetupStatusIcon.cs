@@ -31,23 +31,21 @@ internal static class OVRProjectSetupStatusIcon
     private static readonly PropertyInfo _guiBackend;
     private static readonly PropertyInfo _visualTree;
     private static readonly FieldInfo _onGuiHandler;
-    private static readonly OVRGUIContent _iconSuccess;
-    private static readonly OVRGUIContent _iconNeutral;
-    private static readonly OVRGUIContent _iconWarning;
-    private static readonly OVRGUIContent _iconError;
+    private static readonly GUIContent _iconSuccess;
+    private static readonly GUIContent _iconNeutral;
+    private static readonly GUIContent _iconWarning;
+    private static readonly GUIContent _iconError;
     private static readonly string OpenOculusSettings = "Open Oculus Settings";
 
     private static GUIStyle _iconStyle;
     private static VisualElement _container;
-    private static OVRGUIContent _currentIcon;
+    private static GUIContent _currentIcon;
 
-    internal static OVRGUIContent CurrentIcon => _currentIcon;
+    internal static GUIContent CurrentIcon => _currentIcon;
 
 
     static OVRProjectSetupStatusIcon()
     {
-        if (!OVREditorUtils.IsMainEditor()) return;
-
         var editorAssembly = typeof(UnityEditor.Editor).Assembly;
         var bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
@@ -60,10 +58,10 @@ internal static class OVRProjectSetupStatusIcon
         _visualTree = backendType?.GetProperty("visualTree", bindingFlags);
         _onGuiHandler = containerType?.GetField("m_OnGUIHandler", bindingFlags);
 
-        _iconSuccess = OVREditorUtils.CreateContent("ovr_icon_success.png",  OVRGUIContent.Source.GenericIcons);
-        _iconNeutral = OVREditorUtils.CreateContent("ovr_icon_neutral.png",  OVRGUIContent.Source.GenericIcons);
-        _iconWarning = OVREditorUtils.CreateContent("ovr_icon_warning.png",  OVRGUIContent.Source.GenericIcons);
-        _iconError = OVREditorUtils.CreateContent("ovr_icon_error.png",  OVRGUIContent.Source.GenericIcons);
+        _iconSuccess = OVRProjectSetupUtils.CreateIcon("ovr_icon_success.png", null);
+        _iconNeutral = OVRProjectSetupUtils.CreateIcon("ovr_icon_neutral.png", null);
+        _iconWarning = OVRProjectSetupUtils.CreateIcon("ovr_icon_warning.png", null);
+        _iconError = OVRProjectSetupUtils.CreateIcon("ovr_icon_error.png", null);
         _currentIcon = _iconSuccess;
 
         OVRProjectSetup.ProcessorQueue.OnProcessorCompleted += RefreshData;
@@ -125,7 +123,7 @@ internal static class OVRProjectSetupStatusIcon
         _iconStyle = new GUIStyle("StatusBarIcon");
     }
 
-    public static OVRGUIContent ComputeIcon(OVRConfigurationTaskUpdaterSummary summary)
+    public static GUIContent ComputeIcon(OVRConfigurationTaskUpdaterSummary summary)
     {
         if (summary == null)
         {
@@ -140,7 +138,7 @@ internal static class OVRProjectSetupStatusIcon
             _ => _iconSuccess
         };
 
-        icon.Tooltip = $"{summary.ComputeNoticeMessage()}\n{OpenOculusSettings}";
+        icon.tooltip = $"{summary.ComputeNoticeMessage()}\n{OpenOculusSettings}";
 
         return icon;
     }

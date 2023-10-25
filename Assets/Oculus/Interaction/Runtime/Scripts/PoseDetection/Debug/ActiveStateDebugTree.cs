@@ -42,21 +42,19 @@ namespace Oculus.Interaction.PoseDetection.Debug
         }
 
         private static Dictionary<Type, IActiveStateModel> _models =
-            new Dictionary<Type, IActiveStateModel>();
+            new Dictionary<Type, IActiveStateModel>()
+            {
+                [typeof(ActiveStateGroup)] = new ActiveStateGroupModel(),
+                [typeof(SequenceActiveState)] = new SequenceActiveStateModel(),
+                [typeof(Sequence)] = new SequenceModel(),
+                [typeof(ActiveStateNot)] = new ActiveStateNotModel(),
+            };
 
         private Dictionary<IActiveState, Node> _existingNodes =
             new Dictionary<IActiveState, Node>();
 
         private readonly IActiveState Root;
         private Node _rootNode;
-
-        public static void RegisterModel<TActiveState, TModel>()
-            where TActiveState : class, IActiveState
-            where TModel : class, IActiveStateModel
-        {
-            _models[typeof(TActiveState)] =
-                Activator.CreateInstance(typeof(TModel)) as IActiveStateModel;
-        }
 
         public ActiveStateDebugTree(IActiveState root)
         {
@@ -96,9 +94,8 @@ namespace Oculus.Interaction.PoseDetection.Debug
             }
 
             List<Node> children = new List<Node>();
-
             if (_models.TryGetValue(activeState.GetType(),
-                out IActiveStateModel model) && model != null)
+                out IActiveStateModel model))
             {
                 children.AddRange(model.GetChildren(activeState)
                     .Select((child) => BuildTreeRecursive(child))

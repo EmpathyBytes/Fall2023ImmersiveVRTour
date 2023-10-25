@@ -50,7 +50,7 @@ internal static class OVRProjectSetupMovementSDKConfigurationTasks
                     OVRSkeletonEditor.FixOVRBodyConfiguration(skeleton);
                 }
             },
-            fixMessage: $"Create OVRBody components where they are required"
+            fixMessage: $"Crete OVRBody components where they are required"
         );
     }
 

@@ -11,7 +11,7 @@ using Meta.WitAi.TTS.Data;
 using UnityEditor;
 using UnityEngine;
 
-namespace Meta.WitAi.TTS
+namespace Meta.WitAi.TTS.Editor
 {
     [CustomEditor(typeof(TTSService), true)]
     public class TTSServiceInspector : UnityEditor.Editor
@@ -24,30 +24,21 @@ namespace Meta.WitAi.TTS
         private const int MAX_DISPLAY_TEXT = 20;
 
         // GUI
-        public sealed override void OnInspectorGUI()
+        public override void OnInspectorGUI()
         {
             // Display default ui
-            OnEditTimeGUI();
-            OnPlaytimeGUI();
-        }
-
-        protected virtual void OnEditTimeGUI()
-        {
             base.OnInspectorGUI();
-        }
 
-        protected virtual void OnPlaytimeGUI()
-        {
+            // Get service
+            if (_service == null)
+            {
+                _service = target as TTSService;
+            }
+
             // Ignore if in editor
             if (!Application.isPlaying)
             {
                 return;
-            }
-
-            // Get service
-            if (!_service)
-            {
-                _service = target as TTSService;
             }
 
             // Add spaces
@@ -80,7 +71,7 @@ namespace Meta.WitAi.TTS
                     // Add voice setting id
                     if (clip.voiceSettings != null)
                     {
-                        displayName = $"{clip.voiceSettings.SettingsId} - {displayName}";
+                        displayName = $"{clip.voiceSettings.settingsID} - {displayName}";
                     }
                     // Foldout if desired
                     bool foldout = WitEditorUI.LayoutFoldout(new GUIContent(displayName), clip);
@@ -94,7 +85,6 @@ namespace Meta.WitAi.TTS
                 EditorGUI.indentLevel--;
             }
         }
-
         // Clip data
         public static void DrawClipGUI(TTSClipData clip)
         {

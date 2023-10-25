@@ -28,8 +28,6 @@ internal class OVREditorStart
 
     static OVREditorStart()
     {
-        if (!OVREditorUtils.IsMainEditor()) return;
-
         if (InitSession.Value)
         {
             OVRTelemetry.SendEvent(OVRTelemetryConstants.Editor.Start);

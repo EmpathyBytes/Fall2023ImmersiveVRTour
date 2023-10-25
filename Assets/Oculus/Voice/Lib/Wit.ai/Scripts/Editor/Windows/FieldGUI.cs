@@ -40,13 +40,13 @@ namespace Meta.WitAi.Windows
         }
 
         // Obtain all public, instance fields
-        public static FieldInfo[] GetFields(Type newBaseType, Comparison<FieldInfo> customSort = null)
+        public static FieldInfo[] GetFields(Type newBaseType)
         {
             // Results
             FieldInfo[] results = newBaseType.GetFields(BindingFlags.Public | BindingFlags.Instance);
 
             // Sort parent class fields to top
-            Comparison<FieldInfo> sort = customSort ?? ((f1, f2) =>
+            Array.Sort(results, (f1, f2) =>
             {
                 if (f1.DeclaringType != f2.DeclaringType)
                 {
@@ -61,9 +61,6 @@ namespace Meta.WitAi.Windows
                 }
                 return 0;
             });
-
-            // Sort
-            Array.Sort(results, sort);
 
             // Return results
             return results;

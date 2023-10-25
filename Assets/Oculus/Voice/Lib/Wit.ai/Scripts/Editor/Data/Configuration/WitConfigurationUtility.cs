@@ -13,7 +13,6 @@
 using System;
 using System.Collections.Generic;
 using Meta.Conduit;
-using Meta.Voice.TelemetryUtilities;
 using Meta.WitAi.Json;
 using UnityEditor;
 using UnityEngine;
@@ -279,8 +278,6 @@ namespace Meta.WitAi.Data.Configuration
         // Sets server token for specified configuration by updating it's application data
         public static void SetServerToken(this WitConfiguration configuration, string serverToken, Action<string> onSetComplete = null)
         {
-            var instanceKey = Telemetry.StartEvent(Telemetry.TelemetryEventId.SupplyToken);
-
             // Invalid
             if (!IsServerTokenValid(serverToken))
             {
@@ -299,17 +296,7 @@ namespace Meta.WitAi.Data.Configuration
                 {
                     WitAuthUtility.SetAppServerToken(info.id, serverToken);
                 }
-
                 // Complete
-                if (!string.IsNullOrEmpty(error))
-                {
-                    Telemetry.EndEventWithFailure(instanceKey, error);
-                }
-                else
-                {
-                    Telemetry.EndEvent(instanceKey, Telemetry.ResultType.Success);
-                }
-
                 onSetComplete?.Invoke(error);
             });
         }

@@ -7,7 +7,7 @@ namespace Meta.WitAi.Dictation
 {
     public class MultiRequestTranscription : MonoBehaviour
     {
-        [SerializeField] private DictationService witDictation;
+        [SerializeField] private WitDictation witDictation;
         [SerializeField] private int linesBetweenActivations = 2;
         [Multiline]
         [SerializeField] private string activationSeparator = String.Empty;
@@ -24,7 +24,7 @@ namespace Meta.WitAi.Dictation
 
         private void Awake()
         {
-            if (!witDictation) witDictation = FindObjectOfType<DictationService>();
+            if (!witDictation) witDictation = FindObjectOfType<WitDictation>();
 
             _text = new StringBuilder();
             _separator = new StringBuilder();
@@ -41,17 +41,16 @@ namespace Meta.WitAi.Dictation
 
         private void OnEnable()
         {
-            witDictation.DictationEvents.OnFullTranscription.AddListener(OnFullTranscription);
-            witDictation.DictationEvents.OnPartialTranscription.AddListener(OnPartialTranscription);
-            witDictation.DictationEvents.OnAborting.AddListener(OnCancelled);
+            witDictation.VoiceEvents.OnFullTranscription.AddListener(OnFullTranscription);
+            witDictation.VoiceEvents.OnPartialTranscription.AddListener(OnPartialTranscription);
+            witDictation.VoiceEvents.OnAborting.AddListener(OnCancelled);
         }
 
         private void OnDisable()
         {
             _activeText = string.Empty;
-            witDictation.DictationEvents.OnFullTranscription.RemoveListener(OnFullTranscription);
-            witDictation.DictationEvents.OnPartialTranscription.RemoveListener(OnPartialTranscription);
-            witDictation.DictationEvents.OnAborting.RemoveListener(OnCancelled);
+            witDictation.VoiceEvents.OnFullTranscription.RemoveListener(OnFullTranscription);
+            witDictation.VoiceEvents.OnPartialTranscription.RemoveListener(OnPartialTranscription);
         }
 
         private void OnCancelled()

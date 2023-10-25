@@ -46,7 +46,7 @@ public class AnchorUIManager : MonoBehaviour
 
     private Anchor _selectedAnchor;
 
-    private AnchorMode _mode = AnchorMode.Select;
+    private AnchorMode _mode = AnchorMode.Create;
 
     [SerializeField, FormerlySerializedAs("buttonList_")]
     private List<Button> _buttonList;
@@ -72,6 +72,8 @@ public class AnchorUIManager : MonoBehaviour
 
     private bool _isFocused = true;
 
+
+
     #region Monobehaviour Methods
 
     private void Awake()
@@ -90,17 +92,16 @@ public class AnchorUIManager : MonoBehaviour
     {
         _raycastOrigin = _trackedDevice;
 
-        // Start in select mode
-        _mode = AnchorMode.Select;
-        StartSelectMode();
-
-        _menuIndex = 0;
         _selectedButton = _buttonList[0];
-        _selectedButton.OnSelect(null);
+        _buttonList[0].OnSelect(null);
 
         _lineRenderer.startWidth = 0.005f;
         _lineRenderer.endWidth = 0.005f;
+
+
+        ToggleCreateMode();
     }
+
 
     private void Update()
     {
@@ -146,6 +147,8 @@ public class AnchorUIManager : MonoBehaviour
     {
         GetComponent<SpatialAnchorLoader>().LoadAnchorsByUuid();
     }
+
+
 
     #endregion // Menu UI Callbacks
 
@@ -217,6 +220,7 @@ public class AnchorUIManager : MonoBehaviour
         {
             _selectedButton.OnSubmit(null);
         }
+
     }
 
     private void NavigateToIndexInMenu(bool moveNext)
@@ -346,3 +350,4 @@ public class AnchorUIManager : MonoBehaviour
 
     #endregion // Private Methods
 }
+

@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Meta.WitAi.Data.Configuration.Tabs;
 using Lib.Wit.Runtime.Requests;
 using Meta.Conduit.Editor;
@@ -18,15 +17,14 @@ using Meta.WitAi.Configuration;
 using Meta.WitAi.Data.Configuration;
 using Meta.WitAi.Utilities;
 using Meta.Conduit;
-using Meta.Voice.TelemetryUtilities;
 using Meta.WitAi.Lib;
 using UnityEditor;
 using UnityEngine;
-using Meta.WitAi.Windows.Components;
+using Meta.WitAi.Windows.Conponents;
 
 namespace Meta.WitAi.Windows
 {
-    public class WitConfigurationEditor : Editor
+    public class WitConfigurationEditor : UnityEditor.Editor
     {
         public WitConfiguration Configuration { get; private set; }
         private string _serverToken;
@@ -56,7 +54,6 @@ namespace Meta.WitAi.Windows
 
         private EnumSynchronizer _enumSynchronizer;
 
-        private static Type[] _tabTypes;
         private WitConfigurationEditorTab[] _tabs;
 
         private const string ENTITY_SYNC_CONSENT_KEY = "Conduit.EntitySync.Consent";
@@ -81,18 +78,12 @@ namespace Meta.WitAi.Windows
 
         public void Initialize()
         {
-            // Shared between all WitConfigurationEditors
-            if (_tabTypes == null)
-            {
-                _tabTypes = typeof(WitConfigurationEditorTab).GetSubclassTypes().ToArray();
-            }
-            // Generate tab instances
-            if (_tabs == null)
-            {
-                _tabs = _tabTypes.Select(type => (WitConfigurationEditorTab)Activator.CreateInstance(type))
-                    .OrderBy(tab =>tab.TabOrder)
-                    .ToArray();
-            }
+            _tabs =  AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.IsSubclassOf(typeof(WitConfigurationEditorTab)))
+                .Select(type => (WitConfigurationEditorTab)Activator.CreateInstance(type))
+                .OrderBy(tab =>tab.TabOrder)
+                .ToArray();
 
             // Refresh configuration & auth tokens
             Configuration = target as WitConfiguration;
@@ -131,7 +122,7 @@ namespace Meta.WitAi.Windows
 
             // Draw header
             WitEditorUI.LayoutHeaderText(target.name, HeaderUrl, DocsUrl);
-
+            
 
             // Layout content
             LayoutContent();
@@ -163,48 +154,44 @@ namespace Meta.WitAi.Windows
                 GUILayout.TextArea(WitTexts.Texts.ConfigurationConduitMissingTokenLabel, WitStyles.LabelError);
             }
 
-            EditorGUI.indentLevel++;
-
             // Set conduit
-            var updated = false;
-            WitEditorUI.LayoutToggle(new GUIContent(WitTexts.Texts.ConfigurationConduitUseConduitLabel), ref Configuration.useConduit, ref updated);
-            if (updated)
+            var useConduit = GUILayout.Toggle(Configuration.useConduit, "Use Conduit (Beta)");
+            if (Configuration.useConduit != useConduit)
             {
+                Configuration.useConduit = useConduit;
                 EditorUtility.SetDirty(Configuration);
             }
 
             GenerateManifestIfNeeded();
 
             // Configuration buttons
+            EditorGUI.indentLevel++;
             GUILayout.Space(EditorGUI.indentLevel * WitStyles.ButtonMargin);
             {
                 GUI.enabled = Configuration.useConduit;
-                updated = false;
-                WitEditorUI.LayoutToggle(
-                    new GUIContent(WitTexts.Texts.ConfigurationConduitRelaxedResolutionsLabel,
-                        WitTexts.Texts.ConfigurationConduitRelaxedResolutionsTooltip),
-                    ref Configuration.relaxedResolution, ref updated);
-                if (updated)
+                var useRelaxedMatching = GUILayout.Toggle(Configuration.relaxedResolution, new GUIContent("Relaxed Resolution", "Allows resolving parameters by value if an exact match was not found. Disable to improve runtime performance."));
+                if (Configuration.relaxedResolution != useRelaxedMatching)
                 {
+                    Configuration.relaxedResolution = useRelaxedMatching;
                     EditorUtility.SetDirty(Configuration);
                 }
 
                 GUILayout.BeginHorizontal();
                 {
-                    if (WitEditorUI.LayoutTextButton(_manifestAvailable ? WitTexts.Texts.ConfigurationConduitUpdateManifestLabel : WitTexts.Texts.ConfigurationConduitGenerateManifestLabel))
+                    if (WitEditorUI.LayoutTextButton(_manifestAvailable ? "Update Manifest" : "Generate Manifest"))
                     {
                         GenerateManifest(Configuration, true);
                     }
 
                     GUI.enabled = Configuration.useConduit && _manifestAvailable;
-                    if (WitEditorUI.LayoutTextButton(WitTexts.Texts.ConfigurationConduitSelectManifestLabel) && _manifestAvailable)
+                    if (WitEditorUI.LayoutTextButton("Select Manifest") && _manifestAvailable)
                     {
                         Selection.activeObject =
                             AssetDatabase.LoadAssetAtPath<TextAsset>(Configuration.GetManifestEditorPath());
                     }
 
                     GUI.enabled = Configuration.useConduit;
-                    if (WitEditorUI.LayoutTextButton(WitTexts.Texts.ConfigurationConduitSpecifyAssembliesLabel))
+                    if (WitEditorUI.LayoutTextButton("Specify Assemblies"))
                     {
                         PresentAssemblySelectionDialog();
                     }
@@ -212,7 +199,7 @@ namespace Meta.WitAi.Windows
                     if (isServerTokenValid && !_disableServerPost)
                     {
                         GUI.enabled = Configuration.useConduit && _manifestAvailable && !_syncInProgress;
-                        if (WitEditorUI.LayoutTextButton(WitTexts.Texts.ConfigurationConduitSyncEntitiesLabel))
+                        if (WitEditorUI.LayoutTextButton("Sync Entities"))
                         {
                             SyncEntities();
                             GUIUtility.ExitGUI();
@@ -220,7 +207,7 @@ namespace Meta.WitAi.Windows
                         }
                         if (_isAutoTrainAvailable)
                         {
-                            if (WitEditorUI.LayoutTextButton(WitTexts.Texts.ConfigurationConduitAutoTrainLabel) && _manifestAvailable)
+                            if (WitEditorUI.LayoutTextButton("Auto Train") && _manifestAvailable)
                             {
                                 SyncEntities(() => { AutoTrainOnWitAi(Configuration); });
                             }
@@ -285,7 +272,6 @@ namespace Meta.WitAi.Windows
                 // Server access token
                 bool updated = false;
                 WitEditorUI.LayoutPasswordField(WitTexts.ConfigurationServerTokenContent, ref _serverToken, ref updated);
-
                 if (updated && WitConfigurationUtility.IsServerTokenValid(_serverToken))
                 {
                     ApplyServerToken(_serverToken);
@@ -505,10 +491,6 @@ namespace Meta.WitAi.Windows
             _didCheckAutoTrainAvailability = true;
             CheckAutoTrainIsAvailable(Configuration, (isAvailable) => {
                 _isAutoTrainAvailable = isAvailable;
-                Telemetry.LogInstantEvent(Telemetry.TelemetryEventId.CheckAutoTrain, new Dictionary<Telemetry.AnnotationKey, string>
-                {
-                    { Telemetry.AnnotationKey.IsAvailable, isAvailable.ToString() }
-                });
             });
         }
 
@@ -530,7 +512,6 @@ namespace Meta.WitAi.Windows
         /// <param name="openManifest">If true, will open the manifest file in the code editor.</param>
         private static void GenerateManifest(WitConfiguration configuration, bool openManifest)
         {
-            var instanceKey = Telemetry.StartEvent(Telemetry.TelemetryEventId.GenerateManifest);
             AssemblyWalker.AssembliesToIgnore = new HashSet<string>(configuration.excludedAssemblies);
 
             // Generate
@@ -557,24 +538,9 @@ namespace Meta.WitAi.Windows
             catch (Exception e)
             {
                 VLog.E($"Conduit manifest failed to generate\nPath: {fullPath}\n{e}");
-                Telemetry.EndEventWithFailure(instanceKey, e.Message);
                 return;
             }
-            try
-            {
-                var incompatibleSignatures = string.Join(" ", AssemblyMiner.IncompatibleSignatureFrequency.Keys);
-                Telemetry.AnnotateEvent(instanceKey, Telemetry.AnnotationKey.IncompatibleSignatures, incompatibleSignatures);
 
-                var compatibleSignatures = string.Join(" ", AssemblyMiner.SignatureFrequency.Keys);
-                Telemetry.AnnotateEvent(instanceKey, Telemetry.AnnotationKey.CompatibleSignatures, compatibleSignatures);
-            }
-            catch (Exception e)
-            {
-                VLog.W($"Failed to collect signature telemetry. Exception: {e}");
-            }
-
-
-            Telemetry.EndEvent(instanceKey, Telemetry.ResultType.Success);
             Statistics.SuccessfulGenerations++;
             Statistics.AddFrequencies(AssemblyMiner.SignatureFrequency);
             Statistics.AddIncompatibleFrequencies(AssemblyMiner.IncompatibleSignatureFrequency);
@@ -612,11 +578,8 @@ namespace Meta.WitAi.Windows
         // Sync entities
         private void SyncEntities(Action successCallback = null)
         {
-            var instanceKey = Telemetry.StartEvent(Telemetry.TelemetryEventId.SyncEntities);
-
             if (!EditorUtility.DisplayDialog("Synchronizing with Wit.Ai entities", "This will synchronize local enums with Wit.Ai entities. Part of this process involves generating code locally and may result in overwriting existing code. Please make sure to backup your work before proceeding.", "Proceed", "Cancel", DialogOptOutDecisionType.ForThisSession, ENTITY_SYNC_CONSENT_KEY))
             {
-                Telemetry.EndEvent(instanceKey, Telemetry.ResultType.Cancel);
                 VLog.D("Entity Sync cancelled");
                 return;
             }
@@ -625,7 +588,6 @@ namespace Meta.WitAi.Windows
             var validServerToken = WitConfigurationUtility.IsServerTokenValid(_serverToken);
             if (!validServerToken)
             {
-                Telemetry.EndEventWithFailure(instanceKey, "Invalid server token");
                 VLog.E($"Conduit Sync Failed\nError: Invalid server token");
                 return;
             }
@@ -640,9 +602,7 @@ namespace Meta.WitAi.Windows
             _syncInProgress = true;
             EditorUtility.DisplayProgressBar("Conduit Entity Sync", "Generating Manifest.", 0f );
             GenerateManifest(Configuration, false);
-
-            var manifest = LoadManifest(Configuration.ManifestLocalPath);
-
+            var manifest = ManifestLoader.LoadManifest(Configuration.ManifestLocalPath);
             const float initializationProgress = 0.1f;
             EditorUtility.DisplayProgressBar("Conduit Entity Sync", "Synchronizing entities. Please wait...", initializationProgress);
             VLog.D("Synchronizing enums with Wit.Ai entities");
@@ -652,12 +612,10 @@ namespace Meta.WitAi.Windows
                     EditorUtility.ClearProgressBar();
                     if (!success)
                     {
-                        Telemetry.EndEventWithFailure(instanceKey, data);
                         VLog.E($"Conduit failed to synchronize entities\nError: {data}");
                     }
                     else
                     {
-                        Telemetry.EndEvent(instanceKey, Telemetry.ResultType.Success);
                         VLog.D("Conduit successfully synchronized entities");
                         successCallback?.Invoke();
                     }
@@ -671,9 +629,7 @@ namespace Meta.WitAi.Windows
 
         private static void AutoTrainOnWitAi(WitConfiguration configuration)
         {
-            var instanceKey = Telemetry.StartEvent(Telemetry.TelemetryEventId.AutoTrain);
-            var manifest = LoadManifest(configuration.ManifestLocalPath);
-
+            var manifest = ManifestLoader.LoadManifest(configuration.ManifestLocalPath);
             var intents = ManifestGenerator.ExtractManifestData();
             VLog.D($"Auto training on WIT.ai: {intents.Count} intents.");
 
@@ -681,16 +637,12 @@ namespace Meta.WitAi.Windows
             {
                 if (isSuccess)
                 {
-                    Telemetry.EndEvent(instanceKey, Telemetry.ResultType.Success);
                     EditorUtility.DisplayDialog("Auto Train", "Successfully started auto train process on WIT.ai.",
                         "OK");
                 }
                 else
                 {
-                    var failureMessage =
-                        $"Failed to import generated manifest JSON into WIT.ai: {error}. Manifest:\n{manifest}";
-                    Telemetry.EndEventWithFailure(instanceKey, failureMessage);
-                    VLog.E(failureMessage);
+                    VLog.E($"Failed to import generated manifest JSON into WIT.ai: {error}. Manifest:\n{manifest}");
                     EditorUtility.DisplayDialog("Auto Train", "Failed to start auto train process on WIT.ai.", "OK");
                 }
             });
@@ -698,8 +650,8 @@ namespace Meta.WitAi.Windows
 
         private static void CheckAutoTrainIsAvailable(WitConfiguration configuration, Action<bool> onComplete)
         {
-            var appInfo = configuration.GetApplicationInfo();
-            var manifestText = ManifestGenerator.GenerateEmptyManifest(appInfo.name, appInfo.id);
+            Meta.WitAi.Data.Info.WitAppInfo appInfo = configuration.GetApplicationInfo();
+            string manifestText = ManifestGenerator.GenerateEmptyManifest(appInfo.name, appInfo.id);
             var manifest = ManifestLoader.LoadManifestFromString(manifestText);
             configuration.ImportData(manifest, (result, error) => onComplete(result), true);
         }
@@ -712,21 +664,6 @@ namespace Meta.WitAi.Windows
                 IOUtility.CreateDirectory(directory, true);
             }
             return directory + "/" + configuration.ManifestLocalPath;
-        }
-
-        private static Manifest LoadManifest(string manifestPath)
-        {
-            var instanceKey = Telemetry.StartEvent(Telemetry.TelemetryEventId.LoadManifest);
-
-            var manifest = ManifestLoader.LoadManifest(manifestPath);
-
-            if (manifest == null)
-            {
-                Telemetry.EndEventWithFailure(instanceKey);
-            }
-            Telemetry.EndEvent(instanceKey, Telemetry.ResultType.Success);
-
-            return manifest;
         }
     }
 }

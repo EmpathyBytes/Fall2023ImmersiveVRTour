@@ -22,9 +22,12 @@ using Meta.Voice.VSDKHub;
 using UnityEngine;
 using UnityEditor;
 using Meta.WitAi.Windows;
+using Meta.WitAi.Configuration;
 using Meta.WitAi.Data.Entities;
-using Meta.WitAi.TTS;
-using Meta.WitAi.TTS.Preload;
+using Meta.WitAi.TTS.Editor;
+using Meta.WitAi.TTS.Editor.Preload;
+using Meta.WitAi.Data.Info;
+using Oculus.Voice.Windows;
 
 namespace Oculus.Voice.Utility
 {
@@ -43,6 +46,34 @@ namespace Oculus.Voice.Utility
         private static void OpenUnderstandingWindow()
         {
             WitWindowUtility.OpenUnderstandingWindow();
+        }
+        #endregion
+
+        #region DRAWERS
+        [CustomPropertyDrawer(typeof(WitEndpointConfig))]
+        public class VoiceCustomEndpointPropertyDrawer : WitEndpointConfigDrawer
+        {
+
+        }
+        [CustomPropertyDrawer(typeof(WitAppInfo))]
+        public class VoiceCustomApplicationPropertyDrawer : VoiceApplicationDetailProvider
+        {
+
+        }
+        [CustomPropertyDrawer(typeof(WitIntentInfo))]
+        public class VoiceCustomIntentPropertyDrawer : WitIntentPropertyDrawer
+        {
+
+        }
+        [CustomPropertyDrawer(typeof(WitEntityInfo))]
+        public class VoiceCustomEntityPropertyDrawer : WitEntityPropertyDrawer
+        {
+
+        }
+        [CustomPropertyDrawer(typeof(WitTraitInfo))]
+        public class VoiceCustomTraitPropertyDrawer : WitTraitPropertyDrawer
+        {
+
         }
         #endregion
 

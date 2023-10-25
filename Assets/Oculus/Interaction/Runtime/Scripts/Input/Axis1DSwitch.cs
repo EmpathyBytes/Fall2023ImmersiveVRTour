@@ -68,7 +68,7 @@ namespace Oculus.Interaction
         {
             InjectActiveState(activeState);
             InjectAxisWhenActive(axisWhenActive);
-            InjectAxisWhenInactive(axisWhenInactive);
+            InjectAxisWhenInactive(axisWhenActive);
         }
 
         public void InjectActiveState(IActiveState activeState)

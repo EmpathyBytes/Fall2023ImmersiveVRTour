@@ -6,23 +6,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-using UnityEngine;
-using UnityEngine.Serialization;
-
 namespace Meta.WitAi.TTS.Data
 {
     public abstract class TTSVoiceSettings
     {
-        [Tooltip("A unique id used for linking these voice settings to a TTS Speaker")]
-        [FormerlySerializedAs("settingsID")]
-        public string SettingsId;
+        // Used for initial value
+        public const string DEFAULT_ID = "Default Voice";
 
-        [Tooltip("Text that is added to the front of any TTS request using this voice setting")]
-        [TextArea]
-        public string PrependedText;
-
-        [TextArea]
-        [Tooltip("Text that is added to the end of any TTS request using this voice setting")]
-        public string AppendedText;
+        /// <summary>
+        /// The unique voice settings id
+        /// </summary>
+        public string settingsID = DEFAULT_ID;
     }
 }

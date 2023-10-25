@@ -352,14 +352,6 @@ namespace Meta.WitAi
 
             // Set request & events
             _recordingRequest = newRequest;
-
-            // Add input stream ready check
-            _recordingRequest.onInputStreamReady += r => OnWitReadyForData();
-
-            // Add events
-            _recordingRequest.Events.OnPartialTranscription.AddListener(OnPartialTranscription);
-            _recordingRequest.Events.OnFullTranscription.AddListener(OnFullTranscription);
-            _recordingRequest.Events.OnPartialResponse.AddListener(HandlePartialResult);
             _recordingRequest.Events.OnCancel.AddListener(HandleResult);
             _recordingRequest.Events.OnFailed.AddListener(HandleResult);
             _recordingRequest.Events.OnSuccess.AddListener(HandleResult);
@@ -375,19 +367,19 @@ namespace Meta.WitAi
         /// <param name="recordingRequest"></param>
         public void ExecuteRequest(WitRequest newRequest)
         {
-            if (newRequest == null || newRequest.State != VoiceRequestState.Initialized)
-            {
-                return;
-            }
             SetupRequest(newRequest);
             newRequest.AudioEncoding = AudioBuffer.Instance.AudioEncoding;
             newRequest.audioDurationTracker = new AudioDurationTracker(_recordingRequest.Options?.RequestId,
                 newRequest.AudioEncoding);
+            newRequest.onInputStreamReady += r => OnWitReadyForData();
+            _recordingRequest.Events.OnPartialTranscription.AddListener(OnPartialTranscription);
+            _recordingRequest.Events.OnFullTranscription.AddListener(OnFullTranscription);
+            _recordingRequest.Events.OnPartialResponse.AddListener(HandlePartialResult);
             #pragma warning disable CS0618
             VoiceEvents.OnRequestCreated?.Invoke(_recordingRequest);
             VoiceEvents.OnSend?.Invoke(_recordingRequest);
             _timeLimitCoroutine = StartCoroutine(DeactivateDueToTimeLimit());
-            newRequest.Send();
+            _recordingRequest.Send();
         }
         #endregion
 
@@ -696,7 +688,7 @@ namespace Meta.WitAi
             {
                 request.Cancel("Request was aborted by user.");
             }
-            else if (request.IsAudioInputActivated)
+            else
             {
                 request.DeactivateAudio();
             }
@@ -773,16 +765,6 @@ namespace Meta.WitAi
         /// </summary>
         private void HandleComplete(VoiceServiceRequest request)
         {
-            // Remove all event listeners
-            request.Events.OnPartialTranscription.RemoveListener(OnPartialTranscription);
-            request.Events.OnFullTranscription.RemoveListener(OnFullTranscription);
-            request.Events.OnPartialResponse.RemoveListener(HandlePartialResult);
-            request.Events.OnCancel.RemoveListener(HandleResult);
-            request.Events.OnFailed.RemoveListener(HandleResult);
-            request.Events.OnSuccess.RemoveListener(HandleResult);
-            request.Events.OnComplete.RemoveListener(HandleComplete);
-
-            // Complete
             VoiceEvents?.OnComplete?.Invoke(request);
         }
         #endregion

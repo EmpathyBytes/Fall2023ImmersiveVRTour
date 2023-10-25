@@ -20,13 +20,11 @@
 
 using UnityEditor;
 using System.Reflection;
-using Meta.WitAi.Data.Info;
 using Meta.WitAi.Windows;
 using Oculus.Voice.Inspectors;
 
 namespace Oculus.Voice.Windows
 {
-    [CustomPropertyDrawer(typeof(WitAppInfo))]
     public class VoiceApplicationDetailProvider : WitApplicationPropertyDrawer
     {
         // Skip fields if voice sdk app id

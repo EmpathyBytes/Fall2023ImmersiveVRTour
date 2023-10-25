@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Meta.WitAi.Events.UnityEventListeners
 {
+    [RequireComponent(typeof(ITranscriptionEventProvider))]
     public class TranscriptionEventListener : MonoBehaviour, ITranscriptionEvent
     {
         [SerializeField] private WitTranscriptionEvent onPartialTranscription = new

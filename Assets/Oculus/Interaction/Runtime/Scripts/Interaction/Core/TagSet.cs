@@ -33,11 +33,11 @@ namespace Oculus.Interaction
         [SerializeField]
         private List<string> _tags;
 
-        private readonly HashSet<string> _tagSet =
-            new HashSet<string>();
+        private HashSet<string> _tagSet;
 
         protected virtual void Start()
         {
+            _tagSet = new HashSet<string>();
             foreach (string tag in _tags)
             {
                 _tagSet.Add(tag);

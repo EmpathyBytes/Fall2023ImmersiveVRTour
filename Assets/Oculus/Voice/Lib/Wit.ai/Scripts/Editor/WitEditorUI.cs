@@ -8,7 +8,6 @@
 
 using System;
 using System.Collections.Generic;
-using Meta.Voice.TelemetryUtilities;
 using UnityEditor;
 using UnityEngine;
 
@@ -91,29 +90,17 @@ namespace Meta.WitAi
         {
             GUIContent content = new GUIContent(text);
 #if UNITY_2021_3_OR_NEWER
-            var isClicked = EditorGUILayout.LinkButton(content);
-            if (isClicked)
-            {
-                Telemetry.LogInstantEvent(Telemetry.TelemetryEventId.ClickButton, new Dictionary<Telemetry.AnnotationKey, string>
-                {
-                    {Telemetry.AnnotationKey.ControlId, text},
-                    {Telemetry.AnnotationKey.Type, "Link"}
-                });
-            }
+            return EditorGUILayout.LinkButton(content);
 #else
             var style = GUI.skin.GetStyle("Label");
-            var isClicked = LayoutButton(content, style, new GUILayoutOption[] {});
+            return LayoutButton(content, style, new GUILayoutOption[] {});
 #endif
-
-
-            return isClicked;
         }
 
         public static bool LayoutIconButton(GUIContent icon)
         {
             return LayoutButton(icon, WitStyles.IconButton, null);
         }
-
         public static void LayoutTabButtons(string[] tabTitles, ref int selection)
         {
             if (tabTitles != null)
@@ -137,32 +124,7 @@ namespace Meta.WitAi
         }
         private static bool LayoutButton(GUIContent content, GUIStyle style, GUILayoutOption[] options)
         {
-            var isClicked = GUILayout.Button(content, style, options);
-            if (isClicked)
-            {
-                var annotations = new Dictionary<Telemetry.AnnotationKey, string>
-                {
-                    { Telemetry.AnnotationKey.ControlId, content.text }
-                };
-
-                var name = content.text;
-                if (string.IsNullOrEmpty(name) && content.image != null)
-                {
-                    name = content.image.name;
-                    annotations[Telemetry.AnnotationKey.ControlId] = name;
-                    annotations.Add(Telemetry.AnnotationKey.Type, "Image");
-                }
-
-                if (string.IsNullOrEmpty(name))
-                {
-                    // We can't figure out what was just clicked, so skip telemetry.
-                    return true;
-                }
-
-                Telemetry.LogInstantEvent(Telemetry.TelemetryEventId.ClickButton, annotations);
-            }
-
-            return isClicked;
+            return GUILayout.Button(content, style, options);
         }
         // Layout header button
         public static void LayoutHeaderButton(Texture2D headerTexture, string headerURL, string docsUrl)
@@ -391,11 +353,6 @@ namespace Meta.WitAi
             // Update
             if (toggleValue != newToggleValue)
             {
-                Telemetry.LogInstantEvent(Telemetry.TelemetryEventId.ToggleCheckbox, new Dictionary<Telemetry.AnnotationKey, string>
-                {
-                    {Telemetry.AnnotationKey.ControlId, key.text},
-                    {Telemetry.AnnotationKey.Value, newToggleValue.ToString()}
-                });
                 toggleValue = newToggleValue;
                 isUpdated = true;
             }
@@ -403,7 +360,7 @@ namespace Meta.WitAi
         public static void LayoutPopup(string key, string[] options, ref int selectionValue, ref bool isUpdated)
         {
             // Default
-            int newSelectionValue;
+            int newSelectionValue = selectionValue;
 
             // No options
             if (options == null || options.Length == 0)
@@ -426,22 +383,6 @@ namespace Meta.WitAi
             // Update
             if (selectionValue != newSelectionValue)
             {
-                string value;
-                if (newSelectionValue > 0 && newSelectionValue < options?.Length)
-                {
-                     value = $"{newSelectionValue}:{options[newSelectionValue]}";
-                }
-                else
-                {
-                    value = $"{newSelectionValue}";
-                }
-                Telemetry.LogInstantEvent(Telemetry.TelemetryEventId.ToggleCheckbox, new Dictionary<Telemetry.AnnotationKey, string>
-                {
-                    {Telemetry.AnnotationKey.ControlId, key},
-                    {Telemetry.AnnotationKey.Type, "Popup"},
-                    {Telemetry.AnnotationKey.Value, value}
-                });
-
                 selectionValue = newSelectionValue;
                 isUpdated = true;
             }

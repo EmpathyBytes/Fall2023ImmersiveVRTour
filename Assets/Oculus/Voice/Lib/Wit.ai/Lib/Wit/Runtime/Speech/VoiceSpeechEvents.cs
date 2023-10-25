@@ -21,20 +21,20 @@ namespace Meta.WitAi.Speech
     {
         [Header("Text Events")]
         [Tooltip("Called when speech begins with the provided phrase")]
-        public VoiceTextEvent OnTextPlaybackStart = new VoiceTextEvent();
+        public VoiceTextEvent OnTextPlaybackStart;
         [Tooltip("Called when speech playback is cancelled")]
-        public VoiceTextEvent OnTextPlaybackCancelled = new VoiceTextEvent();
+        public VoiceTextEvent OnTextPlaybackCancelled;
         [Tooltip("Called when speech playback completes successfully")]
-        public VoiceTextEvent OnTextPlaybackFinished = new VoiceTextEvent();
+        public VoiceTextEvent OnTextPlaybackFinished;
 
         [Header("Audio Clip Events")]
         [Tooltip("Called when a clip is ready for playback")]
-        public VoiceAudioEvent OnAudioClipPlaybackReady = new VoiceAudioEvent();
+        public VoiceAudioEvent OnAudioClipPlaybackReady;
         [Tooltip("Called when a clip playback has begun")]
-        public VoiceAudioEvent OnAudioClipPlaybackStart = new VoiceAudioEvent();
+        public VoiceAudioEvent OnAudioClipPlaybackStart;
         [Tooltip("Called when a clip playback has been cancelled")]
-        public VoiceAudioEvent OnAudioClipPlaybackCancelled = new VoiceAudioEvent();
+        public VoiceAudioEvent OnAudioClipPlaybackCancelled;
         [Tooltip("Called when a clip playback has completed successfully")]
-        public VoiceAudioEvent OnAudioClipPlaybackFinished = new VoiceAudioEvent();
+        public VoiceAudioEvent OnAudioClipPlaybackFinished;
     }
 }

@@ -19,14 +19,13 @@
  */
 
 using Oculus.Interaction.Input;
-using System;
 using UnityEngine;
 
 namespace Oculus.Interaction.Locomotion
 {
     /// <summary>
     /// This Gate reads the Hand orientation towards the shoulder and decides
-    /// if it should be in Teleport mode  or Turning mode.
+    /// if it should be in Teleport mode (hand horizontal) or Turning mode (hand vertical).
     /// It enables/disables said modes based on some Input ActiveStates (EnableShape and DisableShape).
     /// It outputs it result into two ActiveStates (for Teleport and Turn)
     /// </summary>
@@ -47,11 +46,26 @@ namespace Oculus.Interaction.Locomotion
         private Transform _shoulder;
 
         [SerializeField]
-        private GateSection[] _gateSections = new GateSection[] {
-            new GateSection(){locomotionMode = LocomotionMode.Teleport, maxAngle = 95f },
-            new GateSection(){locomotionMode = LocomotionMode.Turn, minAngle = 40f, maxAngle =  165f },
-            new GateSection(){locomotionMode = LocomotionMode.Teleport, minAngle = 120f, canEnterDirectly = false }
-        };
+        private bool _allowPalmDownGating = false;
+        public bool AllowPalmDownGating
+        {
+            get
+            {
+                return _allowPalmDownGating;
+            }
+            set
+            {
+                _allowPalmDownGating = value;
+            }
+        }
+
+        [SerializeField]
+        private Vector2 _palmUpToTurnThresholds = new Vector2(50f, 95f);
+        public Vector2 PalmUpToTurnThresholds => _palmUpToTurnThresholds;
+
+        [SerializeField]
+        private Vector2 _turnToPalmDownToThresholds = new Vector2(110f, 140f);
+        public Vector2 TurnToPalmDownToThresholds => _turnToPalmDownToThresholds;
 
         /// <summary>
         /// When it becomes Active, if the hand is within the valid threshold, the
@@ -81,7 +95,6 @@ namespace Oculus.Interaction.Locomotion
 
         protected bool _started;
         private bool _previousShapeEnabled;
-        private int _currentGateIndex = -1;
 
         private LocomotionMode _activeMode = LocomotionMode.None;
         public LocomotionMode ActiveMode
@@ -92,73 +105,27 @@ namespace Oculus.Interaction.Locomotion
             }
             private set
             {
-                if (_activeMode != value)
-                {
-                    LocomotionMode prevMode = _activeMode;
-                    _activeMode = value;
-                    _teleportState.Active = _activeMode == LocomotionMode.Teleport;
-                    _turningState.Active = _activeMode == LocomotionMode.Turn;
-                    _whenActiveModeChanged.Invoke(new LocomotionModeEventArgs(prevMode, _activeMode));
-                }
+                _activeMode = value;
+                _teleportState.Active = _activeMode == LocomotionMode.TeleportUp
+                    || _activeMode == LocomotionMode.TeleportDown;
+                _turningState.Active = _activeMode == LocomotionMode.Turn;
             }
         }
 
         public enum LocomotionMode
         {
             None,
-            Teleport,
+            TeleportUp,
+            TeleportDown,
             Turn
         }
 
-        [System.Serializable]
-        public class GateSection
-        {
-            public float minAngle = _wristLimit;
-            public float maxAngle = 360f + _wristLimit;
-            public bool canEnterDirectly = true;
-            public LocomotionMode locomotionMode = LocomotionMode.None;
-
-            public float ScoreToAngle(float angle)
-            {
-                float dif = Mathf.Repeat(angle - minAngle, 360f);
-                float range = Mathf.Repeat(maxAngle - minAngle, 360f);
-                if (dif > range)
-                {
-                    return float.PositiveInfinity;
-                }
-
-                float average = (minAngle + maxAngle) / 2f;
-                float score = Mathf.Repeat(Mathf.DeltaAngle(angle, average), 360f);
-                return score;
-            }
-        }
-
-        public struct LocomotionModeEventArgs
-        {
-            public LocomotionMode PreviousMode { get; }
-            public LocomotionMode NewMode { get; }
-
-            public LocomotionModeEventArgs(
-                LocomotionMode previousMode,
-                LocomotionMode newMode)
-            {
-                PreviousMode = previousMode;
-                NewMode = newMode;
-            }
-        }
-
+        public float WristLimit => _wristLimit;
         public float CurrentAngle { get; private set; }
         public Vector3 WristDirection { get; private set; }
         public Pose StabilizationPose { get; private set; } = Pose.identity;
 
-        private Action<LocomotionModeEventArgs> _whenActiveModeChanged = delegate { };
-        public event Action<LocomotionModeEventArgs> WhenActiveModeChanged
-        {
-            add => _whenActiveModeChanged += value;
-            remove => _whenActiveModeChanged -= value;
-        }
-
-        private static readonly GateSection DefaultSection = new GateSection() { locomotionMode = LocomotionMode.None };
+        private const float _selectModeOnEnterThreshold = 0.5f;
         private const float _enterPoseThreshold = 0.5f;
         private const float _wristLimit = -70f;
 
@@ -213,6 +180,9 @@ namespace Oculus.Interaction.Locomotion
             trackingRight = isRightHand ? trackingRight : -trackingRight;
             Vector3 wristDir = isRightHand ? -handPose.forward : handPose.forward;
             Vector3 fingersDir = isRightHand ? -handPose.right : handPose.right;
+            Vector3 palmDir = isRightHand ? -handPose.up : handPose.up;
+            bool palmUp = (Vector3.Dot(palmDir, trackingUp) * 0.5 + 0.5f) > _enterPoseThreshold;
+            bool flatHand = Mathf.Abs(Vector3.Dot(wristDir, trackingRight)) > _selectModeOnEnterThreshold;
             bool fingersAway = (Vector3.Dot(fingersDir, Vector3.ProjectOnPlane(shoulderToHand, trackingUp).normalized) * 0.5 + 0.5f) > _enterPoseThreshold;
 
             wristDir = Vector3.ProjectOnPlane(wristDir, shoulderToHand).normalized;
@@ -235,71 +205,56 @@ namespace Oculus.Interaction.Locomotion
             }
             _previousShapeEnabled = EnableShape.Active;
 
-            if (_currentGateIndex < 0
+            if (ActiveMode == LocomotionMode.None
                 && shapeGateEnabled
                 && fingersAway)
             {
-                GateSection gateSection = GetBestGateSection(CurrentAngle, out _currentGateIndex);
-                if (gateSection.canEnterDirectly)
+                if (flatHand)
                 {
-                    ActiveMode = gateSection.locomotionMode;
+                    if (palmUp || _allowPalmDownGating)
+                    {
+                        ActiveMode = palmUp ? LocomotionMode.TeleportUp : LocomotionMode.TeleportDown;
+                    }
                 }
                 else
                 {
-                    _currentGateIndex = -1;
+                    ActiveMode = LocomotionMode.Turn;
                 }
                 return;
             }
 
-            if (_currentGateIndex < 0)
-            {
-                return;
-            }
-
-            if (_currentGateIndex >= 0
+            if (ActiveMode != LocomotionMode.None
                 && DisableShape.Active)
             {
-                _currentGateIndex = -1;
                 ActiveMode = LocomotionMode.None;
                 return;
             }
 
-
-            GateSection currentGate = _gateSections[_currentGateIndex];
-
-            if (CurrentAngle < currentGate.minAngle)
+            if (ActiveMode == LocomotionMode.TeleportUp)
             {
-                _currentGateIndex = Mathf.Max(0, _currentGateIndex - 1);
-                ActiveMode = _gateSections[_currentGateIndex].locomotionMode;
-            }
-            else if (CurrentAngle > currentGate.maxAngle)
-            {
-                _currentGateIndex = Mathf.Min(_gateSections.Length - 1, _currentGateIndex + 1);
-                ActiveMode = _gateSections[_currentGateIndex].locomotionMode;
-            }
-
-        }
-
-        private GateSection GetBestGateSection(float angle, out int index)
-        {
-            float bestScore = float.PositiveInfinity;
-            index = -1;
-
-            for (int i = 0; i < _gateSections.Length; i++)
-            {
-                float score = _gateSections[i].ScoreToAngle(angle);
-                if (score < bestScore)
+                if (CurrentAngle > _palmUpToTurnThresholds.y)
                 {
-                    bestScore = score;
-                    index = i;
+                    ActiveMode = LocomotionMode.Turn;
                 }
             }
-
-            if (index == -1)
+            else if (ActiveMode == LocomotionMode.TeleportDown)
             {
-                return DefaultSection;
+                if (CurrentAngle < _turnToPalmDownToThresholds.x)
+                {
+                    ActiveMode = LocomotionMode.Turn;
+                }
             }
-            return _gateSections[index];
+            else if (ActiveMode == LocomotionMode.Turn)
+            {
+                if (CurrentAngle <= _palmUpToTurnThresholds.x)
+                {
+                    ActiveMode = LocomotionMode.TeleportUp;
+                }
+                else if (CurrentAngle >= _turnToPalmDownToThresholds.y)
+                {
+                    ActiveMode = LocomotionMode.TeleportDown;
+                }
+            }
         }
 
         private void Disable()
@@ -311,8 +266,7 @@ namespace Oculus.Interaction.Locomotion
 
         public void InjectAllLocomotionGate(IHand hand, Transform shoulder,
             IActiveState enableShape, IActiveState disableShape,
-            VirtualActiveState turningState, VirtualActiveState teleportState,
-            GateSection[] gateSections)
+            VirtualActiveState turningState, VirtualActiveState teleportState)
         {
             InjectHand(hand);
             InjectShoulder(shoulder);
@@ -320,7 +274,6 @@ namespace Oculus.Interaction.Locomotion
             InjectDisableShape(disableShape);
             InjectTurningState(turningState);
             InjectTeleportState(teleportState);
-            InjectGateSections(gateSections);
         }
 
         public void InjectHand(IHand hand)
@@ -354,11 +307,6 @@ namespace Oculus.Interaction.Locomotion
         public void InjectTeleportState(VirtualActiveState teleportState)
         {
             _teleportState = teleportState;
-        }
-
-        public void InjectGateSections(GateSection[] gateSections)
-        {
-            _gateSections = gateSections;
         }
 
         #endregion

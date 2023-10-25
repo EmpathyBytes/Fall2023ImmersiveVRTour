@@ -16,26 +16,37 @@ namespace Meta.WitAi.Requests
 {
     internal interface IWitInfoVRequest : IWitVRequest
     {
-        bool RequestAppId(VRequest.RequestCompleteDelegate<string> onComplete);
+        bool RequestAppId(VRequest.RequestCompleteDelegate<string> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestApps(int limit, int offset, VRequest.RequestCompleteDelegate<WitAppInfo[]> onComplete);
+        bool RequestApps(int limit, int offset, VRequest.RequestCompleteDelegate<WitAppInfo[]> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestAppInfo(string applicationId, VRequest.RequestCompleteDelegate<WitAppInfo> onComplete);
+        bool RequestAppInfo(string applicationId, VRequest.RequestCompleteDelegate<WitAppInfo> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestClientAppToken(string applicationId, VRequest.RequestCompleteDelegate<string> onComplete);
+        bool RequestClientAppToken(string applicationId, VRequest.RequestCompleteDelegate<string> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestIntentList(VRequest.RequestCompleteDelegate<WitIntentInfo[]> onComplete);
+        bool RequestIntentList(VRequest.RequestCompleteDelegate<WitIntentInfo[]> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestIntentInfo(string intentId, VRequest.RequestCompleteDelegate<WitIntentInfo> onComplete);
+        bool RequestIntentInfo(string intentId, VRequest.RequestCompleteDelegate<WitIntentInfo> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestEntityList(VRequest.RequestCompleteDelegate<WitEntityInfo[]> onComplete);
+        bool RequestEntityList(VRequest.RequestCompleteDelegate<WitEntityInfo[]> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestEntityInfo(string entityId, VRequest.RequestCompleteDelegate<WitEntityInfo> onComplete);
+        bool RequestEntityInfo(string entityId, VRequest.RequestCompleteDelegate<WitEntityInfo> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestTraitList(VRequest.RequestCompleteDelegate<WitTraitInfo[]> onComplete);
+        bool RequestTraitList(VRequest.RequestCompleteDelegate<WitTraitInfo[]> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestTraitInfo(string traitId, VRequest.RequestCompleteDelegate<WitTraitInfo> onComplete);
+        bool RequestTraitInfo(string traitId, VRequest.RequestCompleteDelegate<WitTraitInfo> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
 
-        bool RequestVoiceList(VRequest.RequestCompleteDelegate<Dictionary<string, WitVoiceInfo[]>> onComplete);
+        bool RequestVoiceList(VRequest.RequestCompleteDelegate<Dictionary<string, WitVoiceInfo[]>> onComplete,
+            VRequest.RequestProgressDelegate onProgress = null);
     }
 }

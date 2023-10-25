@@ -29,17 +29,12 @@ using UnityEngine;
 /// <remarks>
 /// Refers to the <see cref="OVRFaceExpressions.FaceExpression"/> enum for the list of face expressions.
 /// </remarks>
-public class OVRFaceExpressions : MonoBehaviour, IReadOnlyCollection<float>, OVRFaceExpressions.WeightProvider
+public class OVRFaceExpressions : MonoBehaviour, IReadOnlyCollection<float>
 {
     /// <summary>
     /// True if face tracking is enabled, otherwise false.
     /// </summary>
     public bool FaceTrackingEnabled => OVRPlugin.faceTrackingEnabled;
-
-    public interface WeightProvider
-    {
-        float GetWeight(FaceExpression expression);
-    }
 
 
     /// <summary>
@@ -184,8 +179,6 @@ public class OVRFaceExpressions : MonoBehaviour, IReadOnlyCollection<float>, OVR
             return _currentFaceState.ExpressionWeights[(int)expression];
         }
     }
-
-    public float GetWeight(FaceExpression expression) => this[expression];
 
     /// <summary>
     /// This method tries to gets the weight of the given expression if it's available.

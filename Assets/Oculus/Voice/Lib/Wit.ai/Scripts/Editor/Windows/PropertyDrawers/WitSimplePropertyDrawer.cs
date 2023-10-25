@@ -45,17 +45,14 @@ namespace Meta.WitAi.Windows
         protected virtual string GetFieldStringValue(SerializedProperty subfieldProperty)
         {
             // Supported types
-            if (subfieldProperty != null)
+            switch (subfieldProperty.type)
             {
-                switch (subfieldProperty.type)
-                {
-                    case "string":
-                        return subfieldProperty.stringValue;
-                    case "int":
-                        return subfieldProperty.intValue.ToString();
-                    case "bool":
-                        return subfieldProperty.boolValue.ToString();
-                }
+                case "string":
+                    return subfieldProperty.stringValue;
+                case "int":
+                    return subfieldProperty.intValue.ToString();
+                case "bool":
+                    return subfieldProperty.boolValue.ToString();
             }
             // No others are currently supported
             return string.Empty;

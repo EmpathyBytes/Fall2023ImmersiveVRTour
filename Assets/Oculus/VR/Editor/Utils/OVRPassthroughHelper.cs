@@ -18,16 +18,43 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-internal static class OVRPassthroughHelper
+internal class OVRPassthroughHelper
 {
-    internal static bool EnablePassthrough()
+    private const string OVRCameraRigPrefabPath = "Assets/Oculus/VR/Prefabs/OVRCameraRig.prefab";
+
+#if UNITY_2021_1_OR_NEWER
+    private static IEnumerable<GameObject> FindAllInstancesOfPrefab(GameObject prefab) =>
+        PrefabUtility.FindAllInstancesOfPrefab(prefab);
+#else
+    private static IEnumerable<GameObject> FindAllInstancesOfPrefab(GameObject prefab) =>
+        GameObject.FindObjectsOfType(typeof(GameObject))
+            .OfType<GameObject>()
+            .Where(o => PrefabUtility.GetPrefabAssetType(o) == PrefabAssetType.Regular &&
+                        PrefabUtility.GetCorrespondingObjectFromSource(o) == prefab).ToList();
+#endif
+
+    internal GameObject GetOvrCameraRig()
     {
-        var ovrManager = OVRProjectSetupUtils.FindComponentInScene<OVRManager>();
+        var ovrCameraRigPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(OVRCameraRigPrefabPath);
+
+        if (ovrCameraRigPrefab is null)
+        {
+            return null;
+        }
+
+        var ovrCameraRig = FindAllInstancesOfPrefab(ovrCameraRigPrefab).FirstOrDefault();
+        return ovrCameraRig;
+    }
+
+    internal bool EnablePassthrough(GameObject ovrCameraRig)
+    {
+        var ovrManager = ovrCameraRig.GetComponent<OVRManager>();
 
         if (ovrManager is null)
         {
@@ -38,27 +65,27 @@ internal static class OVRPassthroughHelper
         return true;
     }
 
-    internal static bool IsAnyPassthroughLayerUnderlay()
+    internal bool IsAnyPassthroughLayerUnderlay(GameObject ovrCameraRig)
     {
-        return OVRProjectSetupUtils.FindComponentsInScene<OVRPassthroughLayer>()
-            .Any(p => p.overlayType == OVROverlay.OverlayType.Underlay);
+        var passthroughLayers = ovrCameraRig.GetComponents<OVRPassthroughLayer>();
+        return passthroughLayers.Any(p => p.overlayType == OVROverlay.OverlayType.Underlay);
     }
 
-    internal static bool InitPassthroughLayerUnderlay(GameObject ovrCameraRig)
+    internal bool InitPassthroughLayerUnderlay(GameObject ovrCameraRig)
     {
-        var passthroughLayers = OVRProjectSetupUtils.FindComponentsInScene<OVRPassthroughLayer>().ToList();
+        var passthroughLayers = ovrCameraRig.GetComponents<OVRPassthroughLayer>();
 
         // no PT layers
-        if (passthroughLayers.Count == 0)
+        if (!passthroughLayers.Any())
         {
             var underLay = ovrCameraRig.AddComponent<OVRPassthroughLayer>();
             underLay.overlayType = OVROverlay.OverlayType.Underlay;
         }
         // there are layers but non of them are Underlay
-        else if (passthroughLayers.All(l => l.overlayType != OVROverlay.OverlayType.Underlay))
+        else if (!passthroughLayers.Any(l => l.overlayType == OVROverlay.OverlayType.Underlay))
         {
             // if there is only one PT layer, change it to Underlay
-            if (passthroughLayers.Count == 1)
+            if (passthroughLayers.Length == 1)
             {
                 passthroughLayers.First().overlayType = OVROverlay.OverlayType.Underlay;
             }
@@ -74,15 +101,12 @@ internal static class OVRPassthroughHelper
         return true;
     }
 
-    internal static bool HasCentralCamera(OVRCameraRig ovrCameraRig) =>
-        (ovrCameraRig.centerEyeAnchor != null ? ovrCameraRig.centerEyeAnchor.GetComponent<Camera>() : null) != null;
+    internal bool HasCentralCamera(GameObject ovrCameraRig) =>
+        ovrCameraRig.GetComponent<OVRCameraRig>()?.centerEyeAnchor.GetComponent<Camera>() != null;
 
-    internal static Camera GetCentralCamera(OVRCameraRig ovrCameraRig) =>
-        ovrCameraRig.centerEyeAnchor != null ? ovrCameraRig.centerEyeAnchor.GetComponent<Camera>() : null;
-
-    internal static bool IsBackgroundClear(OVRCameraRig ovrCameraRig)
+    internal bool IsBackgroundClear(GameObject ovrCameraRig)
     {
-        var centerCamera = GetCentralCamera(ovrCameraRig);
+        var centerCamera = ovrCameraRig.GetComponent<OVRCameraRig>()?.centerEyeAnchor.GetComponent<Camera>();
 
         if (centerCamera is null)
         {
@@ -92,9 +116,9 @@ internal static class OVRPassthroughHelper
         return centerCamera.clearFlags == CameraClearFlags.SolidColor && centerCamera.backgroundColor.a < 1;
     }
 
-    internal static void ClearBackground(OVRCameraRig ovrCameraRig)
+    internal void ClearBackgroud(GameObject ovrCameraRig)
     {
-        var centerCamera = GetCentralCamera(ovrCameraRig);
+        var centerCamera = ovrCameraRig.GetComponent<OVRCameraRig>()?.centerEyeAnchor.GetComponent<Camera>();
 
         if (centerCamera is null)
         {
@@ -107,9 +131,9 @@ internal static class OVRPassthroughHelper
         SaveScene();
     }
 
-    private static void SaveScene()
+    private void SaveScene()
     {
-        var activeScene = SceneManager.GetActiveScene();
+        var activeScene = EditorSceneManager.GetActiveScene();
         EditorSceneManager.MarkSceneDirty(activeScene);
         EditorSceneManager.SaveScene(activeScene);
     }
