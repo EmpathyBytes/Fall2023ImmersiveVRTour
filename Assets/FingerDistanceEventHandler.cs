@@ -19,6 +19,7 @@ public class FingerDistanceEventHandler : MonoBehaviour
         [SerializeField] private GameObject freshmanDormScene;
         [SerializeField] private GameObject gatechMap;
         [SerializeField] private GameObject OVRCameraRig;
+        [SerializeField] private GameObject infoCard;
 
     // Start is called before the first frame update
     void Start()
@@ -38,8 +39,10 @@ public class FingerDistanceEventHandler : MonoBehaviour
             gatechMap.SetActive(false);
         } else if (lidistance < hoverDistance || ridistance < hoverDistance || licdistance < hoverDistance || ricdistance < hoverDistance) {
             this.GetComponent<MeshRenderer> ().material = white;
+            infoCard.SetActive(true);
         } else {
             this.GetComponent<MeshRenderer> ().material = yellow;
+            infoCard.SetActive(false);
         }
     }
 }
